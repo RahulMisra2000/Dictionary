@@ -18,7 +18,7 @@ public class RetrieveWordsRunnable implements Runnable {
 
     private static final String TAG = "RetrieveWordsRunnable";
 
-    private Handler mMainThreadHandler;
+    private Handler mMainThreadHandler;     // Need this so we can send message back to the calling thread
     private AppDatabase mDb;
     private String mQuery;
 
@@ -29,6 +29,7 @@ public class RetrieveWordsRunnable implements Runnable {
         mDb = AppDatabase.getDatabase(context);
     }
 
+    // This work is done on the background thread
     @Override
     public void run() {
         Log.d(TAG, "run: retrieving words. This is from thread: " + Thread.currentThread().getName());
@@ -43,6 +44,6 @@ public class RetrieveWordsRunnable implements Runnable {
             message = Message.obtain(null, Constants.WORDS_RETRIEVE_FAIL);
         }
 
-        mMainThreadHandler.sendMessage(message);
+        mMainThreadHandler.sendMessage(message);            // sending info back to the calling thread
     }
 }
