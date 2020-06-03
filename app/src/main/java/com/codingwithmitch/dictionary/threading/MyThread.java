@@ -26,9 +26,13 @@ public class MyThread extends Thread {
     private boolean isRunning;
     private AppDatabase mDb;
 
+    /* ***  We are receiving the UI thread's (btw activity and just about everything runs on the UI thread by default) handler
+            so we can send msgs back to the UI thread
+    */
     public MyThread(Context context, Handler mMainThreadHandler) {
         this.mMainThreadHandler = mMainThreadHandler;
         isRunning = true;
+        /* *** Room persistence library that sits on top of SQLite built-in database *** */
         mDb = AppDatabase.getDatabase(context); // will not cause memory leak because 'getApplicationContext()'
     }
 
@@ -36,20 +40,24 @@ public class MyThread extends Thread {
     public void run() {
         if(isRunning){
             Looper.prepare();
-            mMyThreadHandler = new MyThreadHandler(Looper.myLooper());
+            mMyThreadHandler = new MyThreadHandler(Looper.myLooper());      // Custom handler
             Looper.loop();
         }
     }
 
     public void quitThread(){
         isRunning = false;
-        mMainThreadHandler = null;
+        /* To avoid memory leak. This background thread should NOT hold a reference to the activity's handler when the activity is stopped
+           In the activity's onStop() lifecycle method, the quitThread() method is called 
+        */
+        mMainThreadHandler = null;      
     }
 
+    /* This is an INGRES point for the activity to send msgs to this background thread */
     public void sendMessageToBackgroundThread(Message message){
-        while(true){
+        while(true){                                        // keep trying
             try{
-                mMyThreadHandler.sendMessage(message);
+                mMyThreadHandler.sendMessage(message);      // Now this is where the msg is really being sent to the handler
                 break;
             }catch (NullPointerException e){
                 Log.e(TAG, "sendMessageToBackgroundThread: null pointer: " + e.getMessage() );
@@ -91,12 +99,15 @@ public class MyThread extends Thread {
 
     }
 
+    
+    /* This is the handler */
     class MyThreadHandler extends Handler {
 
         public MyThreadHandler(Looper looper) {
             super(looper);
         }
 
+        /* It receives work to be done and then does CRUD using Room library against the SQLite database */
         @Override
         public void handleMessage(Message msg) {
 
