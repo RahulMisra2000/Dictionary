@@ -31,11 +31,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 
+
+/* Implementing Handler.Callback : This allows us to override handleMessage( ) so the UI thread can receive
+                                                 messages from other threads
+                                                */
 public class DictionaryActivity extends AppCompatActivity implements
         WordsRecyclerAdapter.OnWordListener,
         View.OnClickListener,
         SwipeRefreshLayout.OnRefreshListener,
-        Handler.Callback
+        Handler.Callback                        
 {
 
     private static final String TAG = "DictionaryActivity";
@@ -66,7 +70,8 @@ public class DictionaryActivity extends AppCompatActivity implements
         mFab.setOnClickListener(this);
         mSwipeRefresh.setOnRefreshListener(this);
 
-        mMainThreadHandler = new Handler(this);
+        mMainThreadHandler = new Handler(this);        /* This we will pass to the thread so it can send messages to this UI thread */
+                                                
 
         setupRecyclerView();
     }
@@ -89,6 +94,7 @@ public class DictionaryActivity extends AppCompatActivity implements
     protected void onStart() {
         Log.d(TAG, "onStart: called.");
         super.onStart();
+        /* *** Sending this UI thread's handler to the other thread so it can send msgs back to this UI thread */
         mMyThread = new MyThread(this, mMainThreadHandler);
         mMyThread.start();
     }
@@ -115,7 +121,7 @@ public class DictionaryActivity extends AppCompatActivity implements
         Bundle bundle = new Bundle();
         bundle.putString("title", title);
         message.setData(bundle);
-        mMyThread.sendMessageToBackgroundThread(message);
+        mMyThread.sendMessageToBackgroundThread(message);       /* Example of sending message to the other thread */
     }
 
 
@@ -240,6 +246,8 @@ public class DictionaryActivity extends AppCompatActivity implements
         mSwipeRefresh.setRefreshing(false);
     }
 
+
+    /* *** This is where we receive messages from the other thread */
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what){
