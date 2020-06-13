@@ -38,7 +38,17 @@ public class DictionaryActivity extends AppCompatActivity implements
         WordsRecyclerAdapter.OnWordListener,
         View.OnClickListener,
         SwipeRefreshLayout.OnRefreshListener,
-        Handler.Callback
+
+        /* *** Implement this so that we can override the handleMessage(). 
+                Anyone who sends a message or posts a runnable to the UI threads handler will be received in this handleMessage() method.
+                (Remember, unless we program otherwise, in Android, by default everything runs on the UI thread. Therefore, so does Activty.)
+                
+                So, we can take the UI thread's Handler and send it to any component that wants to communicate with this Activity because 
+                by using the handler it receives the component can send messages.
+                In our example, that component is a HandlerThread that can do work in the background and once the results are available
+                it can send the results back to the activity by using the UI thread's (Activity's thread's) handler that was sent to it.
+        */
+        Handler.Callback                                 
 {
 
     private static final String TAG = "DictionaryActivity";
@@ -53,6 +63,8 @@ public class DictionaryActivity extends AppCompatActivity implements
     private FloatingActionButton mFab;
     private String mSearchQuery = "";
     private HandlerThread mHandlerThread;
+    
+    /* *** This is the Handler of the UI thread ******* */
     private Handler mMainThreadHandler;
 
 
@@ -69,6 +81,7 @@ public class DictionaryActivity extends AppCompatActivity implements
         mFab.setOnClickListener(this);
         mSwipeRefresh.setOnRefreshListener(this);
 
+        /* *** This is the Handler of the UI thread *** */
         mMainThreadHandler = new Handler(this);
 
         setupRecyclerView();
@@ -117,6 +130,9 @@ public class DictionaryActivity extends AppCompatActivity implements
         Log.d(TAG, "retrieveWords: called.");
 
         Handler backgroundHandler = new Handler(mHandlerThread.getLooper());
+        
+        /* *** Note: we are sending the UI thread's Handler so that the HandlerThread can later send a message back to the UI Thread *** */
+        /*           It will be received in the handleMessage() method coded at the end of this class ... see at the bottom */
         backgroundHandler.post(new RetrieveWordsRunnable(this, mMainThreadHandler, title));
     }
 
@@ -128,6 +144,8 @@ public class DictionaryActivity extends AppCompatActivity implements
         mWordRecyclerAdapter.notifyDataSetChanged();
 
         Handler backgroundHandler = new Handler(mHandlerThread.getLooper());
+        /* *** Note: we are sending the UI thread's Handler so that the HandlerThread can later send a message back to the UI Thread *** */
+        /*           It will be received in the handleMessage() method coded at the end of this class ... see at the bottom */
         backgroundHandler.post(new DeleteWordRunnable(this, mMainThreadHandler, word));
     }
 
